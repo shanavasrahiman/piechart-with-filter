@@ -1,44 +1,74 @@
-import { Line, Bar, ComposedChart, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
+import { PieChart, Pie, Cell, Legend, Tooltip } from "recharts";
 
 function App() {
   const [data, setData] = useState([]);
+  const [selectedType, setSelectedType] = useState("All");
 
   useEffect(() => {
-    fetch('https://api.npoint.io/06efddd350d6174b2aac')
-      .then(response => response.json())
-      .then(data => setData(data))
+    fetch("https://api.npoint.io/337776b8c56f51424f0b")
+      .then((response) => response.json())
+      .then((data) => setData(data));
   }, []);
 
-  const [selectedYear, setSelectedYear] = useState('All');
+  const COLORS = [
+    "#0088FE",
+    "#00C49F",
+    "#FFBB28",
+    "#FF8042",
+    "#AF19FF",
+    "#FF19A6"
+  ];
 
-  const handleYearChange = (event) => {
-    setSelectedYear(event.target.value);
-  }
+  const filteredData =
+    selectedType === "All" ? data : data.filter((d) => d.type === selectedType);
 
-  const filteredData = selectedYear === 'All' ? data : data.filter(item => item.year === selectedYear);
+  const uniqueTypes = ["All", ...new Set(data.map((d) => d.type))];
+
+  const colorMap = {};
+  uniqueTypes.forEach((type, index) => {
+    colorMap[type] = COLORS[index % COLORS.length];
+  });
 
   return (
     <div className="App">
       <div>
-        <label htmlFor="year-select">Select Year: </label>
-        <select id="year-select" value={selectedYear} onChange={handleYearChange}>
-          <option value="All">All</option>
-          {data.map(item => (
-            <option key={item.year} value={item.year}>{item.year}</option>
+        <label htmlFor="type">Filter by Type: </label>
+        <select
+          name="type"
+          id="type"
+          value={selectedType}
+          onChange={(e) => setSelectedType(e.target.value)}
+        >
+          {uniqueTypes.map((type) => (
+            <option key={type} value={type}>
+              {type}
+            </option>
           ))}
         </select>
       </div>
-      <ComposedChart width={800} height={400} data={filteredData}>
-        <XAxis dataKey="year" />
-        <YAxis yAxisId="left" />
-        <YAxis yAxisId="right" orientation="right" />
-        <CartesianGrid stroke="#f5f5f5" />
+      <PieChart width={800} height={400}>
+        <Pie
+          dataKey="value"
+          nameKey="type"
+          isAnimationActive={false}
+          data={filteredData}
+          cx={400}
+          cy={200}
+          outerRadius={80}
+          fill="#8884d8"
+          label
+        >
+          {filteredData.map((entry) => (
+            <Cell
+              key={`cell-${entry.type}`}
+              fill={colorMap[entry.type]}
+            />
+          ))}
+        </Pie>
         <Tooltip />
         <Legend />
-        <Bar yAxisId="left" dataKey="revenue" barSize={20} fill="#413ea0" />
-        <Line yAxisId="right" type="monotone" dataKey="materialization" stroke="#8884d8" />
-      </ComposedChart>
+      </PieChart>
     </div>
   );
 }
